@@ -5,19 +5,11 @@ export function nvmrc(): string {
 }
 
 export function pnpmWorkspace(): string {
-  return `# Allow build scripts for native packages required by Next.js
-onlyBuiltDependencies:
-  - sharp
-  - '@img/sharp-darwin-arm64'
-  - '@img/sharp-darwin-x64'
-  - '@img/sharp-linux-arm64'
-  - '@img/sharp-linux-x64'
-  - '@img/sharp-libvips-darwin-arm64'
-  - '@img/sharp-libvips-darwin-x64'
-  - '@img/sharp-libvips-linux-arm64'
-  - '@img/sharp-libvips-linux-x64'
-  - unrs-resolver
-  - esbuild
+  return `# pnpm 11 — allow build scripts for native packages required by Next.js
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+  esbuild: true
 `;
 }
 
@@ -370,9 +362,9 @@ export default ${pwaWrapper};
 
 export function huskyPreCommit(): string {
   return `# lint and format staged files
-npx lint-staged
+./node_modules/.bin/lint-staged
 
 # verify typescript
-npx tsc --noEmit
+./node_modules/.bin/tsc --noEmit
 `;
 }

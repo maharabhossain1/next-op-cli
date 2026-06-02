@@ -21,14 +21,14 @@ export async function runCapture(
   return stdout.trim();
 }
 
-export function getPmRunner(pm: string): string {
-  const runners: Record<string, string> = {
-    pnpm: 'pnpm',
-    npm: 'npx',
-    yarn: 'yarn',
-    bun: 'bunx',
+export function getPmRunner(pm: string): [string, string[]] {
+  const runners: Record<string, [string, string[]]> = {
+    pnpm: ['pnpm', ['dlx']],
+    npm: ['npx', []],
+    yarn: ['yarn', ['dlx']],
+    bun: ['bunx', []],
   };
-  return runners[pm] ?? 'npx';
+  return runners[pm] ?? ['npx', []];
 }
 
 export function getInstallCmd(pm: string): [string, string[]] {

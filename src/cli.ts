@@ -210,14 +210,16 @@ function collectFiles(config: ProjectConfig): FileMap {
 
 export async function scaffold(config: ProjectConfig): Promise<void> {
   const cwd = process.cwd();
-  const projectDir = join(cwd, config.name);
+  const projectDir = config.inPlace ? cwd : join(cwd, config.name);
 
   // ── Directory ─────────────────────────────────────────────────────────────
-  if (await fs.pathExists(projectDir)) {
+  if (!config.inPlace && (await fs.pathExists(projectDir))) {
     logger.error(`Directory ${pc.cyan(config.name)} already exists.`);
     process.exit(1);
   }
-  await fs.ensureDir(projectDir);
+  if (!config.inPlace) {
+    await fs.ensureDir(projectDir);
+  }
 
   const s = p.spinner();
 
@@ -226,8 +228,8 @@ export async function scaffold(config: ProjectConfig): Promise<void> {
   const files = collectFiles(config);
   await writeFiles(projectDir, files);
 
-  // Ensure stub directories
-  const stubDirs = [
+  // Ensure stub directories — only add .gitkeep to dirs with no generated files
+  const candidateDirs = [
     'public/fonts',
     'public/images',
     'components/ui',
@@ -236,9 +238,12 @@ export async function scaffold(config: ProjectConfig): Promise<void> {
     'hooks',
   ];
   if (config.stateManagement !== 'none' && !files.has('store/index.ts')) {
-    stubDirs.push('store');
+    candidateDirs.push('store');
   }
-  await ensureDirs(projectDir, stubDirs);
+  const emptyDirs = candidateDirs.filter(
+    d => ![...files.keys()].some(f => f === d || f.startsWith(d + '/')),
+  );
+  await ensureDirs(projectDir, emptyDirs);
   s.stop('Project files created');
 
   // ── Install dependencies ──────────────────────────────────────────────────
@@ -269,36 +274,41 @@ export async function scaffold(config: ProjectConfig): Promise<void> {
   await run('chmod', ['+x', join(projectDir, '.husky', 'pre-commit')], projectDir).catch(() => {});
   s.stop('Git hooks configured');
 
+  // ── Git ───────────────────────────────────────────────────────────────────
+  // Init git before shadcn so that shadcn can detect the repo root
+  if (config.initGit) {
+    s.start('Initializing git repository...');
+    await run('git', ['init'], projectDir);
+    s.stop('Git repository initialized');
+  }
+
   // ── shadcn/ui ─────────────────────────────────────────────────────────────
   if (config.shadcn) {
-    s.start('Initializing shadcn/ui...');
-    const pmRunner = getPmRunner(config.packageManager);
-    // shadcn init with --yes to skip interactive prompts (uses components.json we already wrote)
-    await run(pmRunner, ['shadcn@latest', 'add', '--yes', '--overwrite'], projectDir, true).catch(
-      () => {
-        // shadcn init may exit with non-zero even on success, ignore
-      },
-    );
-
     const components = getComponentsForPreset(config.shadcnPreset);
     if (components.length > 0) {
-      s.message(`Adding ${components.length} shadcn components...`);
+      s.start(`Adding ${components.length} shadcn components...`);
+      const [pmRunner, pmRunnerPrefix] = getPmRunner(config.packageManager);
       await run(
         pmRunner,
-        ['shadcn@latest', 'add', '--yes', '--overwrite', ...components],
+        [...pmRunnerPrefix, 'shadcn@latest', 'add', '--yes', '--overwrite', ...components],
         projectDir,
         true,
       ).catch(() => {
         logger.warn('shadcn component install failed — run manually after setup');
       });
+      s.stop('shadcn/ui configured');
     }
-    s.stop('shadcn/ui configured');
   }
 
-  // ── Git ───────────────────────────────────────────────────────────────────
+  // ── Format + lint fix ────────────────────────────────────────────────────
+  s.start('Formatting and linting generated files...');
+  await run('node_modules/.bin/prettier', ['--write', '.'], projectDir, true).catch(() => {});
+  await run('node_modules/.bin/eslint', ['--fix', '.'], projectDir, true).catch(() => {});
+  s.stop('Files formatted');
+
+  // ── Git: stage and commit ─────────────────────────────────────────────────
   if (config.initGit) {
-    s.start('Initializing git repository...');
-    await run('git', ['init'], projectDir);
+    s.start('Creating initial commit...');
     await run('git', ['add', '-A'], projectDir);
     await run(
       'git',

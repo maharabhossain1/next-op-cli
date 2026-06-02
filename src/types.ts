@@ -38,4 +38,5 @@ export interface ProjectConfig {
   pwa: boolean;
   packageManager: PackageManager;
   initGit: boolean;
+  inPlace: boolean;
 }

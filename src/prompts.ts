@@ -1,3 +1,5 @@
+import { basename } from 'node:path';
+
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 
@@ -14,8 +16,12 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   p.intro(pc.bgCyan(pc.black(' next-op-cli ')) + ' ' + pc.dim('Opinionated Next.js scaffolding'));
 
   // ── Project name ──────────────────────────────────────────────────────────
+  const inPlace = nameArg === '.';
   let name: string;
-  if (nameArg) {
+  if (inPlace) {
+    name = basename(process.cwd());
+    p.log.info(`Project name: ${pc.cyan(name)} ${pc.dim('(current directory)')}`);
+  } else if (nameArg) {
     name = nameArg;
     p.log.info(`Project name: ${pc.cyan(name)}`);
   } else {
@@ -237,5 +243,6 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
     pwa: Boolean(pwaChoice),
     packageManager: pm as ProjectConfig['packageManager'],
     initGit: Boolean(gitChoice),
+    inPlace,
   };
 }
