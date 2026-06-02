@@ -4,6 +4,7 @@ interface PackageJson {
   name: string;
   version: string;
   private: boolean;
+  packageManager?: string;
   engines: Record<string, string>;
   scripts: Record<string, string>;
   dependencies: Record<string, string>;
@@ -146,15 +147,22 @@ export function generatePackageJson(config: ProjectConfig): PackageJson {
     }
   }
 
-  const pmEngineKey = packageManager === 'pnpm' ? 'pnpm' : packageManager === 'bun' ? 'bun' : 'npm';
+  const pmVersions: Record<string, string> = {
+    pnpm: '10.11.0',
+    yarn: '4.9.1',
+    bun: '1.2.0',
+  };
+  const packageManagerField = pmVersions[packageManager]
+    ? `${packageManager}@${pmVersions[packageManager]}`
+    : undefined;
 
   return {
     name,
     version: '0.1.0',
     private: true,
+    ...(packageManagerField && { packageManager: packageManagerField }),
     engines: {
       node: '>=24.0.0',
-      [pmEngineKey]: '>=10',
     },
     scripts,
     dependencies,
