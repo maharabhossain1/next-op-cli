@@ -240,7 +240,14 @@ export async function scaffold(config: ProjectConfig): Promise<void> {
   // ── Install dependencies ──────────────────────────────────────────────────
   s.start(`Installing dependencies with ${config.packageManager}...`);
   const [installCmd, installArgs] = getInstallCmd(config.packageManager);
-  await run(installCmd, installArgs, projectDir);
+  try {
+    await run(installCmd, installArgs, projectDir);
+  } catch (err) {
+    // pnpm exits with code 1 on ERR_PNPM_IGNORED_BUILDS warnings even when
+    // install succeeds. Treat as success if node_modules exists.
+    const hasModules = await fs.pathExists(join(projectDir, 'node_modules'));
+    if (!hasModules) throw err;
+  }
   s.stop('Dependencies installed');
 
   // ── Husky ─────────────────────────────────────────────────────────────────

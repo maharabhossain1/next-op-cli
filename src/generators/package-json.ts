@@ -9,6 +9,7 @@ interface PackageJson {
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
   'lint-staged': Record<string, string[]>;
+  pnpm?: { onlyBuiltDependencies: string[] };
 }
 
 export function generatePackageJson(config: ProjectConfig): PackageJson {
@@ -148,7 +149,7 @@ export function generatePackageJson(config: ProjectConfig): PackageJson {
 
   const pmEngineKey = packageManager === 'pnpm' ? 'pnpm' : packageManager === 'bun' ? 'bun' : 'npm';
 
-  return {
+  const result: PackageJson = {
     name,
     version: '0.1.0',
     private: true,
@@ -165,4 +166,24 @@ export function generatePackageJson(config: ProjectConfig): PackageJson {
       '**/*.{json,yml}': ['prettier --write'],
     },
   };
+
+  if (packageManager === 'pnpm') {
+    result.pnpm = {
+      onlyBuiltDependencies: [
+        'sharp',
+        '@img/sharp-darwin-arm64',
+        '@img/sharp-darwin-x64',
+        '@img/sharp-libvips-darwin-arm64',
+        '@img/sharp-libvips-darwin-x64',
+        '@img/sharp-linux-arm64',
+        '@img/sharp-linux-x64',
+        '@img/sharp-libvips-linux-arm64',
+        '@img/sharp-libvips-linux-x64',
+        'unrs-resolver',
+        'esbuild',
+      ],
+    };
+  }
+
+  return result;
 }
