@@ -4,6 +4,23 @@ export function nvmrc(): string {
   return '24.14.1\n';
 }
 
+export function pnpmWorkspace(): string {
+  return `# Allow build scripts for native packages required by Next.js
+onlyBuiltDependencies:
+  - sharp
+  - '@img/sharp-darwin-arm64'
+  - '@img/sharp-darwin-x64'
+  - '@img/sharp-linux-arm64'
+  - '@img/sharp-linux-x64'
+  - '@img/sharp-libvips-darwin-arm64'
+  - '@img/sharp-libvips-darwin-x64'
+  - '@img/sharp-libvips-linux-arm64'
+  - '@img/sharp-libvips-linux-x64'
+  - unrs-resolver
+  - esbuild
+`;
+}
+
 export function npmrc(pm: string): string {
   const lines = ['engine-strict=true', ''];
   if (pm === 'pnpm') {

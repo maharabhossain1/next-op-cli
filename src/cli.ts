@@ -43,6 +43,7 @@ import {
   nvmrc,
   nvmrc as _nvmrc,
   passwordUtils,
+  pnpmWorkspace,
   postcssConfig,
   prettierrc,
   queryHookExample,
@@ -95,6 +96,9 @@ function collectFiles(config: ProjectConfig): FileMap {
   files.set('.prettierrc', prettierrc());
   files.set('next.config.ts', nextConfig(config));
   files.set('.husky/pre-commit', huskyPreCommit());
+  if (config.packageManager === 'pnpm') {
+    files.set('pnpm-workspace.yaml', pnpmWorkspace());
+  }
 
   // ── App shell ─────────────────────────────────────────────────────────────
   files.set('app/globals.css', globalsCss(config));
@@ -252,9 +256,17 @@ export async function scaffold(config: ProjectConfig): Promise<void> {
 
   // ── Husky ─────────────────────────────────────────────────────────────────
   s.start('Setting up Husky hooks...');
-  await run(config.packageManager, ['run', 'prepare'], projectDir);
-  // Make pre-commit executable
-  await run('chmod', ['+x', '.husky/pre-commit'], projectDir);
+  try {
+    await run(config.packageManager, ['run', 'prepare'], projectDir);
+  } catch {
+    // pnpm exits 1 on ERR_PNPM_IGNORED_BUILDS even when husky ran fine
+    const huskyExists = await fs.pathExists(join(projectDir, '.husky', '_'));
+    if (!huskyExists) {
+      // husky didn't actually run — try running it directly
+      await run('node_modules/.bin/husky', [], projectDir).catch(() => {});
+    }
+  }
+  await run('chmod', ['+x', join(projectDir, '.husky', 'pre-commit')], projectDir).catch(() => {});
   s.stop('Git hooks configured');
 
   // ── shadcn/ui ─────────────────────────────────────────────────────────────
