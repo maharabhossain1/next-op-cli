@@ -5,7 +5,10 @@ export function nvmrc(): string {
 }
 
 export function pnpmWorkspace(): string {
-  return `# pnpm 11 — allow build scripts for native packages required by Next.js
+  return `packages:
+  - '.'
+
+# allow build scripts for native packages required by Next.js
 allowBuilds:
   sharp: true
   unrs-resolver: true
