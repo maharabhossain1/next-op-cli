@@ -31,9 +31,8 @@ export function authConfig(config: ProjectConfig): string {
       `import { z } from 'zod';`,
     );
     if (config.projectType === 'fullstack') {
+      // `db` and `users` are imported once in the adapter block below.
       providerImports.push(
-        `import { db } from '@/lib/db';`,
-        `import { users } from '@/lib/db/schema/users';`,
         `import { eq } from 'drizzle-orm';`,
         `import { comparePasswords } from '@/lib/auth/password';`,
       );
@@ -75,21 +74,31 @@ ${credentialsBody}
 
   imports.push(...providerImports);
 
-  const drizzleAdapter =
-    config.projectType === 'fullstack'
-      ? `import { DrizzleAdapter } from '@auth/drizzle-adapter';\nimport { db } from '@/lib/db';\n`
-      : '';
+  if (config.projectType === 'fullstack') {
+    imports.push(
+      `import { DrizzleAdapter } from '@auth/drizzle-adapter';`,
+      `import { db } from '@/lib/db';`,
+      `import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';`,
+    );
+  }
 
   const adapterLine =
-    config.projectType === 'fullstack' ? `\n  adapter: DrizzleAdapter(db),` : '';
+    config.projectType === 'fullstack'
+      ? `\n  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),`
+      : '';
 
   return `${imports.join('\n')}
-${drizzleAdapter}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({${adapterLine}
   providers: [
 ${providers.join('\n')}
   ],
-  session: { strategy: '${config.projectType === 'fullstack' ? 'database' : 'jwt'}' },
+  session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',
     error: '/login',
@@ -119,12 +128,12 @@ export const { GET, POST } = handlers;
 `;
 }
 
-export function middleware(): string {
+export function proxy(): string {
   return `import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export default auth(function middleware(req: NextRequest & { auth: unknown }) {
+export default auth(function proxy(req: NextRequest & { auth: unknown }) {
   const isLoggedIn = !!req.auth;
   const isAuthPage = req.nextUrl.pathname.startsWith('/login') ||
     req.nextUrl.pathname.startsWith('/register');

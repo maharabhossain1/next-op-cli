@@ -1,4 +1,12 @@
-import { execa } from 'execa';
+import { execa, type ResultPromise } from 'execa';
+
+// Track the currently running child so an abort (Ctrl+C) can kill it
+// immediately instead of waiting for it to finish or for execa's cleanup.
+let active: ResultPromise | undefined;
+
+export function killActiveChild(): void {
+  active?.kill('SIGTERM');
+}
 
 export async function run(
   command: string,
@@ -6,10 +14,18 @@ export async function run(
   cwd: string,
   silent = false,
 ): Promise<void> {
-  await execa(command, args, {
+  const child = execa(command, args, {
     cwd,
     stdio: silent ? 'pipe' : 'inherit',
+    // If the child ignores SIGTERM, escalate to SIGKILL after 2s.
+    forceKillAfterDelay: 2000,
   });
+  active = child;
+  try {
+    await child;
+  } finally {
+    if (active === child) active = undefined;
+  }
 }
 
 export async function runCapture(

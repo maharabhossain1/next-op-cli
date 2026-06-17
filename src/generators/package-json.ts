@@ -95,12 +95,13 @@ export function generatePackageJson(config: ProjectConfig): PackageJson {
     } else {
       dependencies['better-sqlite3'] = '^11.7.0';
       devDependencies['@types/better-sqlite3'] = '^7.6.12';
-      devDependencies['drizzle-orm'] = undefined as unknown as string;
-      dependencies['drizzle-orm'] = '^0.36.4';
     }
-    // Auth.js + DB adapter
-    if (config.authProviders?.length) {
-      dependencies['@auth/drizzle-adapter'] = '^1.7.4';
+    // Fullstack always scaffolds an Auth.js config with the Drizzle adapter.
+    dependencies['next-auth'] = '^5.0.0-beta.28';
+    dependencies['@auth/drizzle-adapter'] = '^1.7.4';
+    if (config.authProviders?.includes('credentials')) {
+      dependencies['bcryptjs'] = '^2.4.3';
+      devDependencies['@types/bcryptjs'] = '^2.4.6';
     }
   }
 

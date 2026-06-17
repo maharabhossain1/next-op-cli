@@ -13,6 +13,7 @@ import {
   apiTypes,
   authConfig,
   authGuard,
+  authSchema,
   authLayout,
   authRoute,
   authService,
@@ -35,7 +36,6 @@ import {
   libUtils,
   loginPage,
   loginPageExternal,
-  middleware,
   nextAuthDts,
   nextConfig,
   notFound,
@@ -46,6 +46,7 @@ import {
   pnpmWorkspace,
   postcssConfig,
   prettierrc,
+  proxy,
   queryHookExample,
   queryProvider,
   rootLayout,
@@ -55,7 +56,7 @@ import {
   storeIndex,
   swrConfig,
   swrHookExample,
-  tokenMiddleware,
+  tokenProxy,
   tsconfig,
   typesIndex,
   uiStore,
@@ -127,7 +128,7 @@ function collectFiles(config: ProjectConfig): FileMap {
   if (projectType === 'auth-js') {
     files.set('auth.ts', authConfig(config));
     files.set('app/api/auth/[...nextauth]/route.ts', authRoute());
-    files.set('middleware.ts', middleware());
+    files.set('proxy.ts', proxy());
     files.set('app/(auth)/login/page.tsx', loginPage(config));
     files.set('app/(auth)/layout.tsx', authLayout());
     files.set('app/(dashboard)/layout.tsx', dashboardLayoutWithAuth());
@@ -145,7 +146,7 @@ function collectFiles(config: ProjectConfig): FileMap {
       files.set('lib/api.ts', apiClient(config));
       files.set('lib/services/auth.service.ts', authService(config));
       files.set('store/auth.store.ts', authStore());
-      files.set('middleware.ts', tokenMiddleware());
+      files.set('proxy.ts', tokenProxy());
       files.set('app/(auth)/login/page.tsx', loginPageExternal());
       files.set('app/(auth)/layout.tsx', authLayout());
       files.set('app/(dashboard)/layout.tsx', dashboardLayout());
@@ -167,10 +168,13 @@ function collectFiles(config: ProjectConfig): FileMap {
     files.set('drizzle.config.ts', drizzleConfig(config));
     files.set('lib/db/index.ts', dbClient(config));
     files.set('lib/db/schema/users.ts', usersSchema(config));
+    if (config.authProviders?.length) {
+      files.set('lib/db/schema/auth.ts', authSchema(config));
+    }
     files.set('lib/db/schema/index.ts', schemaIndex(config));
     files.set('auth.ts', authConfig(config));
     files.set('app/api/auth/[...nextauth]/route.ts', authRoute());
-    files.set('middleware.ts', middleware());
+    files.set('proxy.ts', proxy());
     files.set('app/(auth)/login/page.tsx', loginPage(config));
     files.set('app/(auth)/layout.tsx', authLayout());
     files.set('app/(dashboard)/layout.tsx', dashboardLayoutWithAuth());

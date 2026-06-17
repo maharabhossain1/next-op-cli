@@ -63,8 +63,9 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   cancelCheck(projectType);
 
   // ── Auth.js providers ─────────────────────────────────────────────────────
+  // Both auth-js and fullstack scaffold an Auth.js config, so both need providers.
   let authProviders: string[] = [];
-  if (projectType === 'auth-js') {
+  if (projectType === 'auth-js' || projectType === 'fullstack') {
     const providers = await p.multiselect({
       message: 'Auth providers',
       options: [

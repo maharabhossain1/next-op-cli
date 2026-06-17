@@ -206,13 +206,13 @@ export async function initAuth(): Promise<void> {
 `;
 }
 
-export function tokenMiddleware(): string {
+export function tokenProxy(): string {
   return `import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/', '/login', '/register'];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.includes(path) || path.startsWith('/api');
 

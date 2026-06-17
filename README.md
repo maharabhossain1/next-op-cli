@@ -113,7 +113,7 @@ my-app/
 │   └── site.ts
 ├── public/
 ├── auth.ts          (NextAuth config — if auth)
-├── middleware.ts    (route protection)
+├── proxy.ts         (route protection — Next.js 16 proxy convention)
 ├── drizzle.config.ts (fullstack only)
 ├── next.config.ts
 ├── tsconfig.json
